@@ -13,7 +13,7 @@
     "test:e2e": "playwright test",
     "db:push": "supabase db push",
     "db:types": "supabase gen types typescript --project-id djgkouwcskfgxkscwlqd > lib/supabase/database.types.ts",
-    "seed": "tsx --env-file=.env.local scripts/seed.ts",
+    "seed": "tsx --conditions=react-server --env-file=.env.local scripts/seed.ts",
     "assets": "tsx scripts/make-icons.ts && tsx scripts/make-mock-images.ts",
     "postinstall": "node scripts/vendor-maplibre.mjs",
     "check": "npm run typecheck && npm run lint && npm run test"
