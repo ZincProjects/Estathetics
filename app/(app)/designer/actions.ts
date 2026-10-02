@@ -96,13 +96,13 @@ export async function deleteRoom(projectId: string, roomId: string) {
 
 // ─── Photos ────────────────────────────────────────────────────────────
 /** Called by the browser after it uploads a resized JPEG straight to Storage. */
-export async function registerPhoto(input: { roomId: string; path: string; width: number; height: number }) {
+export async function registerPhoto(input: { folderId: string; path: string; width: number; height: number }) {
   const { profile, supabase } = await designer();
   const parsed = registerPhotoSchema.safeParse(input);
-  if (!parsed.success || !isOwnedPhotoPath(parsed.data.path, profile.id, parsed.data.roomId)) {
+  if (!parsed.success || !isOwnedPhotoPath(parsed.data.path, profile.id, parsed.data.folderId)) {
     return { ok: false as const, error: "Invalid upload" };
   }
-  const { roomId, path, width, height } = parsed.data;
+  const { folderId: roomId, path, width, height } = parsed.data;
 
   const { data: room } = await supabase.from("rooms").select("id, project_id").eq("id", roomId).single();
   if (!room) return { ok: false as const, error: "Room not found" };

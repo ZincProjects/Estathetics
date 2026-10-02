@@ -27,3 +27,11 @@ export async function signOriginals(supabase: ServerSupabase, paths: (string | n
 export function publicUrl(supabase: ServerSupabase, bucket: "designs" | "listings" | "avatars", path: string) {
   return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
 }
+
+/** Public URL for a listing photo path, without needing a client instance. */
+export function listingPhotoUrl(path: string) {
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKETS.listings}/${path}`;
+}
+export function designPhotoUrl(path: string) {
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKETS.designs}/${path}`;
+}

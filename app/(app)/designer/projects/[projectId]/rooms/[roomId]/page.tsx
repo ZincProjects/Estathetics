@@ -198,7 +198,7 @@ export default async function RoomPage({ params }: Props) {
 
         <aside className="space-y-6 lg:sticky lg:top-20 lg:self-start">
           <Card title="Photos">
-            <PhotoUploader userId={profile.id} roomId={roomId} register={registerPhoto} />
+            <PhotoUploader userId={profile.id} folderId={roomId} register={registerPhoto} />
             <p className="text-xs text-muted-foreground">
               Photos are private to you. They&apos;re resized on your device and location data is removed.
             </p>

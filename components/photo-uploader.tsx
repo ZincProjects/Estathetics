@@ -12,24 +12,24 @@ import { createClient } from "@/lib/supabase/client";
 type Item = { key: string; name: string; status: "resizing" | "uploading" | "done" | "error"; error?: string };
 
 export type RegisterPhoto = (input: {
-  roomId: string;
+  folderId: string;
   path: string;
   width: number;
   height: number;
 }) => Promise<{ ok: true; id: string } | { ok: false; error: string }>;
 
 /**
- * Uploads photos straight from the browser to the private `originals` bucket
- * (path {userId}/{roomId}/{uuid}.jpg, enforced by storage RLS), then registers them.
+ * Uploads photos straight from the browser to Storage (path {userId}/{folderId}/{uuid}.jpg,
+ * enforced by storage RLS), then registers them via a server action.
  */
 export function PhotoUploader({
   userId,
-  roomId,
+  folderId,
   register,
   bucket = "originals",
 }: {
   userId: string;
-  roomId: string;
+  folderId: string;
   register: RegisterPhoto;
   bucket?: "originals" | "listings";
 }) {
@@ -57,14 +57,14 @@ export function PhotoUploader({
       try {
         const { blob, width, height } = await resizeToJpeg(file, UPLOAD_MAX_EDGE);
         update(key, { status: "uploading" });
-        const path = `${userId}/${roomId}/${crypto.randomUUID()}.jpg`;
+        const path = `${userId}/${folderId}/${crypto.randomUUID()}.jpg`;
         const { error } = await supabase.storage.from(bucket).upload(path, blob, {
           contentType: "image/jpeg",
           cacheControl: "31536000",
           upsert: false,
         });
         if (error) throw new Error(error.message);
-        const res = await register({ roomId, path, width, height });
+        const res = await register({ folderId, path, width, height });
         if (!res.ok) {
           await supabase.storage.from(bucket).remove([path]);
           throw new Error(res.error);

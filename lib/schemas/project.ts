@@ -27,13 +27,13 @@ export const roomSchema = z.object({
 });
 
 export const registerPhotoSchema = z.object({
-  roomId: z.uuid(),
+  folderId: z.uuid(),
   path: z.string().min(1).max(300),
   width: z.number().int().positive().max(10000),
   height: z.number().int().positive().max(10000),
 });
 
-/** Uploaded originals must live under {userId}/{roomId}/ and be a jpeg we produced. */
-export function isOwnedPhotoPath(path: string, userId: string, roomId: string) {
-  return new RegExp(`^${userId}/${roomId}/[0-9a-f-]{36}\\.jpg$`).test(path);
+/** Uploaded photos must live under {userId}/{folderId}/ and be a jpeg we produced. */
+export function isOwnedPhotoPath(path: string, userId: string, folderId: string) {
+  return new RegExp(`^${userId}/${folderId}/[0-9a-f-]{36}\\.jpg$`).test(path);
 }
