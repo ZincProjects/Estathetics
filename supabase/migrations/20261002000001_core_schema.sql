@@ -1,7 +1,6 @@
 -- Estathetics core schema
 -- Conventions: every row-owning table carries `owner_id`/`agent_id` for cheap RLS checks.
 
-
 -- ─── Enums ──────────────────────────────────────────────────────────────
 create type public.user_role as enum ('interior_designer', 'agent', 'buyer', 'admin');
 create type public.org_kind as enum ('design_firm', 'agency');
@@ -17,7 +16,7 @@ create type public.content_kind as enum ('listing_copy', 'social_pack', 'utilisa
 
 -- ─── Helpers ────────────────────────────────────────────────────────────
 create or replace function public.set_updated_at()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql set search_path = '' as $$
 begin
   new.updated_at = now();
   return new;
@@ -82,7 +81,7 @@ create trigger on_auth_user_created after insert on auth.users
 
 -- Users may not promote themselves to admin.
 create or replace function public.guard_profile_role()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql set search_path = '' as $$
 begin
   if new.role = 'admin' and (old.role is distinct from 'admin')
      and coalesce(auth.role(), '') <> 'service_role' then
