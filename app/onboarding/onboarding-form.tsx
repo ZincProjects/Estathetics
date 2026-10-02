@@ -81,8 +81,7 @@ export function OnboardingForm({
             rows={3}
             placeholder={"https://instagram.com/yourstudio\nhttps://yourstudio.sg"}
             hint="One per line. Shown on your public designer profile."
-            defaultValue={v("portfolioUrls", defaults.portfolioUrls?.join("
-") ?? "")}
+            defaultValue={v("portfolioUrls", defaults.portfolioUrls?.join("\n") ?? "")}
             error={state.fieldErrors?.portfolioUrls}
           />
         </section>
