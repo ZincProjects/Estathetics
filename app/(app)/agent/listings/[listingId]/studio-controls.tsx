@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, ExternalLink, Globe, ImageIcon, Link2, Star, Trash2 } from "lucide-react";
+import { Check, ExternalLink, Globe, ImageIcon, Link2, Loader2, MapPinned, Star, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
@@ -112,5 +113,32 @@ export function ListingPhotoGrid({ listingId, photos, coverPath }: { listingId: 
         </li>
       ))}
     </ul>
+  );
+}
+
+export function GenerateNeighbourhoodButton({ listingId, hasReport, hasLocation }: { listingId: string; hasReport: boolean; hasLocation: boolean }) {
+  const [pending, setPending] = useState(false);
+  const router = useRouter();
+  return (
+    <Button
+      variant={hasReport ? "outline" : "default"}
+      size={hasReport ? "sm" : "xl"}
+      disabled={pending || !hasLocation}
+      onClick={async () => {
+        setPending(true);
+        try {
+          const res = await fetch(`/api/listings/${listingId}/neighbourhood`, { method: "POST" });
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok) toast.error(body.error ?? "Couldn't build the report");
+          else toast.success(`Found ${body.count} places nearby`);
+          router.refresh();
+        } finally {
+          setPending(false);
+        }
+      }}
+    >
+      {pending ? <Loader2 className="animate-spin" /> : <MapPinned />}
+      {pending ? "Finding nearby places…" : hasReport ? "Refresh" : "Build neighbourhood report"}
+    </Button>
   );
 }

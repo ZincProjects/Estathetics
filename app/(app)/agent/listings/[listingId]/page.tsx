@@ -12,7 +12,8 @@ import { listingFacts, priceLabel, psfLabel } from "@/lib/listing-format";
 import { listingPhotoUrl } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/server";
 import { deleteListing, registerListingPhoto } from "../../actions";
-import { ListingPhotoGrid, PublishControls } from "./studio-controls";
+import { NeighbourhoodReport } from "@/components/neighbourhood/neighbourhood-report";
+import { GenerateNeighbourhoodButton, ListingPhotoGrid, PublishControls } from "./studio-controls";
 
 type Props = PageProps<"/agent/listings/[listingId]">;
 
@@ -43,7 +44,7 @@ export default async function ListingStudioPage({ params }: Props) {
   const supabase = await createClient();
   const { data: l } = await supabase
     .from("listings")
-    .select("*, listing_photos(id, storage_path, room_label, sort)")
+    .select("*, listing_photos(id, storage_path, room_label, sort), listing_amenities(category, name, lat, lng, distance_m, walk_minutes, source)")
     .eq("id", listingId)
     .order("sort", { referencedTable: "listing_photos" })
     .maybeSingle();
@@ -97,8 +98,27 @@ export default async function ListingStudioPage({ params }: Props) {
             <ListingPhotoGrid listingId={l.id} photos={photos} coverPath={l.cover_photo_path} />
           </Section>
 
-          <Section title="Neighbourhood" icon={MapPinned}>
-            <p className="text-sm text-muted-foreground">Neighbourhood report arrives in step 10.</p>
+          <Section
+            title="Neighbourhood"
+            icon={MapPinned}
+            action={
+              l.listing_amenities.length > 0 && (
+                <GenerateNeighbourhoodButton listingId={l.id} hasReport hasLocation={l.lat != null} />
+              )
+            }
+          >
+            {l.listing_amenities.length > 0 && l.lat != null && l.lng != null ? (
+              <NeighbourhoodReport home={{ lat: l.lat, lng: l.lng, label: l.address }} amenities={l.listing_amenities} />
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  {l.lat == null
+                    ? "Pin the location first: edit the listing and pick the address from the search."
+                    : "Find MRT stations, schools, hawker centres, malls and more within walking distance."}
+                </p>
+                <GenerateNeighbourhoodButton listingId={l.id} hasReport={false} hasLocation={l.lat != null} />
+              </div>
+            )}
           </Section>
 
           <Section title="Listing copy" icon={Sparkles}>
