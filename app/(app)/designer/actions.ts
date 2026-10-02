@@ -162,3 +162,26 @@ export async function updateScan(scanId: string, data: unknown) {
   revalidatePath(`/designer/projects/${row.rooms?.project_id}/rooms/${row.room_id}`);
   return { ok: true as const };
 }
+
+// ─── Designs ───────────────────────────────────────────────────────────
+async function roomPath(supabase: Awaited<ReturnType<typeof createClient>>, roomId: string) {
+  const { data } = await supabase.from("rooms").select("project_id").eq("id", roomId).single();
+  return data ? `/designer/projects/${data.project_id}/rooms/${roomId}` : "/designer";
+}
+
+/** Marks one design as the chosen look for its room (one per room). */
+export async function chooseDesign(roomId: string, designId: string, chosen: boolean) {
+  const { supabase } = await designer();
+  if (chosen) await supabase.from("designs").update({ chosen: false }).eq("room_id", roomId).eq("chosen", true);
+  await supabase.from("designs").update({ chosen }).eq("id", designId).eq("room_id", roomId);
+  revalidatePath(await roomPath(supabase, roomId));
+}
+
+export async function deleteDesignBatch(roomId: string, batchId: string) {
+  const { supabase } = await designer();
+  const { data: rows } = await supabase.from("designs").select("storage_path").eq("batch_id", batchId).eq("room_id", roomId);
+  await supabase.from("designs").delete().eq("batch_id", batchId).eq("room_id", roomId);
+  const paths = (rows ?? []).map((r) => r.storage_path).filter((p): p is string => Boolean(p));
+  if (paths.length) await supabase.storage.from(BUCKETS.designs).remove(paths);
+  revalidatePath(await roomPath(supabase, roomId));
+}

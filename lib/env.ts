@@ -17,6 +17,7 @@ const schema = z.object({
   REPLICATE_API_TOKEN: z.string().min(1).optional(),
   REPLICATE_REDESIGN_MODEL: z.string().min(1).optional(),
   REPLICATE_WEBHOOK_SECRET: z.string().min(1).optional(),
+  REPLICATE_INPUT_STYLE: z.enum(["controlnet", "edit"]).optional(),
 
   ONEMAP_EMAIL: z.string().optional(),
   ONEMAP_PASSWORD: z.string().optional(),
