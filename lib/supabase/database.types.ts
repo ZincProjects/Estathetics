@@ -955,6 +955,7 @@ export type Database = {
         Args: { p_kind: string; p_limit: number; p_window_seconds: number }
         Returns: number
       }
+      delete_my_account: { Args: never; Returns: undefined }
       increment_listing_view: { Args: { p_slug: string }; Returns: undefined }
     }
     Enums: {
