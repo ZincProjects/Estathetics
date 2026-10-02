@@ -16,19 +16,30 @@ type Defaults = {
   firmName: string;
   agencyName: string;
   ceaNumber: string;
+  bio?: string;
+  specialties?: string[];
+  portfolioUrls?: string[];
 };
 
-export function OnboardingForm({ defaults }: { defaults: Defaults }) {
-  const [state, action] = useActionState<FormState, FormData>(completeOnboarding, {});
+export function OnboardingForm({
+  defaults,
+  action: serverAction = completeOnboarding,
+  submitLabel = "Continue to my studio",
+}: {
+  defaults: Defaults;
+  action?: (prev: FormState, fd: FormData) => Promise<FormState>;
+  submitLabel?: string;
+}) {
+  const [state, action] = useActionState<FormState, FormData>(serverAction, {});
   const [role, setRole] = useState<SignupRole>(defaults.role ?? "interior_designer");
   const v = (k: string, fallback = "") => (state.values?.[k] as string | undefined) ?? fallback;
-  const chosen = new Set((state.values?.specialties as string[] | undefined) ?? []);
+  const chosen = new Set((state.values?.specialties as string[] | undefined) ?? defaults.specialties ?? []);
 
   return (
     <form action={action} className="space-y-6" noValidate>
       {!defaults.role && <RolePicker role={role} onChange={setRole} error={state.fieldErrors?.role} />}
       <input type="hidden" name="role" value={role} />
-      <FormMessage message={state.message} />
+      <FormMessage message={state.message} ok={state.ok} />
 
       <section className="space-y-4">
         <Field label="Full name" name="fullName" autoComplete="name" defaultValue={v("fullName", defaults.fullName)} error={state.fieldErrors?.fullName} />
@@ -70,7 +81,8 @@ export function OnboardingForm({ defaults }: { defaults: Defaults }) {
             rows={3}
             placeholder={"https://instagram.com/yourstudio\nhttps://yourstudio.sg"}
             hint="One per line. Shown on your public designer profile."
-            defaultValue={v("portfolioUrls")}
+            defaultValue={v("portfolioUrls", defaults.portfolioUrls?.join("
+") ?? "")}
             error={state.fieldErrors?.portfolioUrls}
           />
         </section>
@@ -89,10 +101,10 @@ export function OnboardingForm({ defaults }: { defaults: Defaults }) {
         </section>
       )}
 
-      <TextareaField label="Short bio (optional)" name="bio" rows={3} maxLength={600} defaultValue={v("bio")} error={state.fieldErrors?.bio} />
+      <TextareaField label="Short bio (optional)" name="bio" rows={3} maxLength={600} defaultValue={v("bio", defaults.bio ?? "")} error={state.fieldErrors?.bio} />
 
       <SubmitButton className="w-full" pendingLabel="Saving…">
-        Continue to my studio
+        {submitLabel}
       </SubmitButton>
     </form>
   );
