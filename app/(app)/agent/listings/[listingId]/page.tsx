@@ -13,6 +13,8 @@ import { listingPhotoUrl } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/server";
 import { deleteListing, registerListingPhoto } from "../../actions";
 import { NeighbourhoodReport } from "@/components/neighbourhood/neighbourhood-report";
+import { listingCopySchema, type Tone } from "@/lib/schemas/listing-copy";
+import { CopyPanel, type CurrentCopy } from "./copy-panel";
 import { GenerateNeighbourhoodButton, ListingPhotoGrid, PublishControls } from "./studio-controls";
 
 type Props = PageProps<"/agent/listings/[listingId]">;
@@ -52,6 +54,20 @@ export default async function ListingStudioPage({ params }: Props) {
 
   const photos = l.listing_photos.map((p) => ({ id: p.id, path: p.storage_path, url: listingPhotoUrl(p.storage_path), label: p.room_label }));
   const psf = psfLabel(l.asking_price, l.size_sqft);
+
+  const { data: copyRow } = await supabase
+    .from("listing_content")
+    .select("data, tone")
+    .eq("listing_id", l.id)
+    .eq("kind", "listing_copy")
+    .eq("is_current", true)
+    .maybeSingle();
+  const parsedCopy = copyRow ? listingCopySchema.safeParse(copyRow.data) : null;
+  const extra = (copyRow?.data ?? {}) as { warnings?: string[]; edited?: boolean; model?: string };
+  const currentCopy: CurrentCopy | null =
+    parsedCopy?.success && copyRow
+      ? { ...parsedCopy.data, tone: (copyRow.tone as Tone) ?? "professional", warnings: extra.warnings ?? [], edited: extra.edited, mocked: extra.model === "mock" }
+      : null;
 
   return (
     <>
@@ -122,7 +138,11 @@ export default async function ListingStudioPage({ params }: Props) {
           </Section>
 
           <Section title="Listing copy" icon={Sparkles}>
-            <p className="text-sm text-muted-foreground">AI listing copy arrives in step 11.</p>
+            <p className="text-sm text-muted-foreground">
+              Written only from your facts and the neighbourhood report. Every number is checked against them.
+              {l.listing_amenities.length === 0 && " Build the neighbourhood report first for richer copy."}
+            </p>
+            <CopyPanel listingId={l.id} current={currentCopy} />
           </Section>
         </div>
 

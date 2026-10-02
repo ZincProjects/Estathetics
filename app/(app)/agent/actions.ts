@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { fieldErrors, type FormState } from "@/lib/forms";
 import { listingSchema, normaliseListing } from "@/lib/schemas/listing";
+import { listingCopySchema } from "@/lib/schemas/listing-copy";
 import { slugify } from "@/lib/schemas/profile";
 import { isOwnedPhotoPath, registerPhotoSchema } from "@/lib/schemas/project";
 import { BUCKETS } from "@/lib/storage";
@@ -154,4 +155,29 @@ export async function deleteListingPhoto(listingId: string, photoId: string) {
     await supabase.from("listings").update({ cover_photo_path: next?.[0]?.storage_path ?? null }).eq("id", listingId);
   }
   revalidatePath(`/agent/listings/${listingId}`);
+}
+
+// ─── Copy ──────────────────────────────────────────────────────────────
+/** Saves the agent's manual edits to the current listing copy. */
+export async function saveListingCopy(listingId: string, copy: unknown) {
+  const { supabase } = await agent();
+  const parsed = listingCopySchema.safeParse(copy);
+  if (!parsed.success) return { ok: false as const, error: "Headline, description and selling points are required." };
+  const clean = {
+    headline: parsed.data.headline.trim(),
+    description: parsed.data.description.map((s) => s.trim()).filter(Boolean),
+    key_selling_points: parsed.data.key_selling_points.map((s) => s.trim()).filter(Boolean),
+  };
+  const { data: current } = await supabase
+    .from("listing_content")
+    .select("id, data")
+    .eq("listing_id", listingId)
+    .eq("kind", "listing_copy")
+    .eq("is_current", true)
+    .maybeSingle();
+  if (!current) return { ok: false as const, error: "Generate copy first." };
+  const prev = (current.data ?? {}) as Record<string, unknown>;
+  await supabase.from("listing_content").update({ data: { ...prev, ...clean, edited: true, warnings: [] } }).eq("id", current.id);
+  revalidatePath(`/agent/listings/${listingId}`);
+  return { ok: true as const };
 }
