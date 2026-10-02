@@ -11,7 +11,7 @@ const schema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
 
   ANTHROPIC_API_KEY: z.string().min(1).optional(),
-  ANTHROPIC_MODEL: z.string().min(1).default("claude-sonnet-5-5"),
+  ANTHROPIC_MODEL: z.string().min(1).default("claude-opus-5-5"),
 
   REDESIGN_PROVIDER: z.enum(["replicate", "mock"]).optional(),
   REPLICATE_API_TOKEN: z.string().min(1).optional(),
@@ -26,7 +26,9 @@ const schema = z.object({
   FORCE_MOCK: z.enum(["true", "false"]).optional(),
 });
 
-const parsed = schema.safeParse(process.env);
+// Treat blank values (e.g. `ANTHROPIC_API_KEY=` copied from .env.example) as unset → mock mode.
+const raw = Object.fromEntries(Object.entries(process.env).map(([k, v]) => [k, v?.trim() ? v.trim() : undefined]));
+const parsed = schema.safeParse(raw);
 if (!parsed.success) {
   console.error("Invalid environment variables", z.flattenError(parsed.error).fieldErrors);
   throw new Error("Invalid environment variables");

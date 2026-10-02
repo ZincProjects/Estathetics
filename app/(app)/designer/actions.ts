@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { fieldErrors, type FormState } from "@/lib/forms";
 import { isOwnedPhotoPath, projectSchema, registerPhotoSchema, roomSchema } from "@/lib/schemas/project";
+import { roomScanSchema } from "@/lib/schemas/room-scan";
 import { BUCKETS } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/server";
 
@@ -144,4 +145,20 @@ export async function deletePhoto(roomId: string, photoId: string) {
   }
   const { data: room } = await supabase.from("rooms").select("project_id").eq("id", roomId).single();
   if (room) revalidatePath(`/designer/projects/${room.project_id}/rooms/${roomId}`);
+}
+
+// ─── Scans ─────────────────────────────────────────────────────────────
+export async function updateScan(scanId: string, data: unknown) {
+  const { supabase } = await designer();
+  const parsed = roomScanSchema.safeParse(data);
+  if (!parsed.success) return { ok: false as const, error: "Some fields are invalid." };
+  const { data: row, error } = await supabase
+    .from("room_scans")
+    .update({ data: parsed.data, edited_at: new Date().toISOString() })
+    .eq("id", scanId)
+    .select("room_id, rooms(project_id)")
+    .single();
+  if (error || !row) return { ok: false as const, error: "Couldn't save the scan." };
+  revalidatePath(`/designer/projects/${row.rooms?.project_id}/rooms/${row.room_id}`);
+  return { ok: true as const };
 }

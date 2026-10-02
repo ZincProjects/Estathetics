@@ -1,15 +1,19 @@
-import { ChevronLeft, ScanLine, Sparkles, Star, Trash2 } from "lucide-react";
+import { ChevronLeft, Sparkles, Star, Trash2 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ConfirmAction } from "@/components/confirm-action";
 import { PageHeader } from "@/components/page-header";
 import { PhotoUploader } from "@/components/photo-uploader";
+import { ScanReport } from "@/components/scan-report";
 import { requireProfile } from "@/lib/auth";
 import { roomTypeLabel } from "@/lib/constants";
+import { roomScanSchema } from "@/lib/schemas/room-scan";
 import { signOriginals } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/server";
 import { deletePhoto, deleteRoom, registerPhoto, setPrimaryPhoto } from "../../../../actions";
+import { ScanEditor } from "./scan-editor";
+import { ScanButton } from "./scan-panel";
 
 type Props = PageProps<"/designer/projects/[projectId]/rooms/[roomId]">;
 
@@ -36,6 +40,15 @@ export default async function RoomPage({ params }: Props) {
   const photos = room.room_photos;
   const urls = await signOriginals(supabase, photos.map((p) => p.storage_path));
   const primary = photos.find((p) => p.is_primary) ?? photos[0];
+
+  const { data: scanRow } = await supabase
+    .from("room_scans")
+    .select("id, data, model, created_at, edited_at")
+    .eq("room_id", roomId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const scan = scanRow ? roomScanSchema.safeParse(scanRow.data) : null;
 
   return (
     <>
@@ -98,6 +111,14 @@ export default async function RoomPage({ params }: Props) {
               ))}
             </ul>
           )}
+
+          {scanRow && scan?.success && (
+            <ScanReport
+              scan={scan.data}
+              meta={`${scanRow.model === "mock" ? "Demo scan" : "AI scan"} · ${new Date(scanRow.created_at).toLocaleDateString("en-SG", { day: "numeric", month: "short", year: "numeric" })}${scanRow.edited_at ? " · edited by you" : ""}`}
+              actions={<ScanEditor scanId={scanRow.id} scan={scan.data} />}
+            />
+          )}
         </section>
 
         <aside className="space-y-6">
@@ -111,9 +132,12 @@ export default async function RoomPage({ params }: Props) {
 
           <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
             <h2 className="text-xl">AI design</h2>
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-              <ScanLine className="size-5 text-brand" /> Room scan arrives in step 5
-            </div>
+            <p className="text-sm text-muted-foreground">
+              {scanRow
+                ? "Your scan is ready. Edit anything that looks off, then redesign."
+                : "Scan the main photo to get dimensions, light, constraints and opportunities."}
+            </p>
+            <ScanButton roomId={roomId} hasPhoto={photos.length > 0} hasScan={Boolean(scanRow)} />
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
               <Sparkles className="size-5 text-brand" /> Redesign arrives in step 7
             </div>

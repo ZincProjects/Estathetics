@@ -141,7 +141,7 @@
 }
 
 @layer base {
-  h1, h2, h3, .font-heading {
+  h1, h2, h3:not(.font-sans), .font-heading {
     font-family: var(--font-fraunces), Georgia, serif;
     letter-spacing: -0.015em;
   }
