@@ -99,10 +99,14 @@ export function SignupFlow({ initialRole }: { initialRole?: string }) {
     <div className="space-y-6">
       <RolePicker role={role} onChange={setRole} />
       <SignupForm role={role} />
-      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-        <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
-      </div>
-      <GoogleButton role={role} next="/onboarding" label="Sign up with Google" />
+      {process.env.NEXT_PUBLIC_GOOGLE_AUTH === "true" && (
+        <>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
+          </div>
+          <GoogleButton role={role} next="/onboarding" label="Sign up with Google" />
+        </>
+      )}
     </div>
   );
 }

@@ -10,6 +10,8 @@ export function GoogleButton({
   next?: string;
   label?: string;
 }) {
+  // Hidden until the Google provider is enabled in Supabase (Authentication → Providers → Google).
+  if (process.env.NEXT_PUBLIC_GOOGLE_AUTH !== "true") return null;
   return (
     <form action={signInWithGoogle}>
       {role && <input type="hidden" name="role" value={role} />}

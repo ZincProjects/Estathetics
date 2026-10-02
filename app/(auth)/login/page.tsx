@@ -15,10 +15,14 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         <h1 className="text-3xl">Welcome back</h1>
         <p className="text-muted-foreground">Sign in to your studio.</p>
       </div>
-      <GoogleButton next={nextPath} />
-      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-        <Separator className="flex-1" /> or with email <Separator className="flex-1" />
-      </div>
+      {process.env.NEXT_PUBLIC_GOOGLE_AUTH === "true" && (
+        <>
+          <GoogleButton next={nextPath} />
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <Separator className="flex-1" /> or with email <Separator className="flex-1" />
+          </div>
+        </>
+      )}
       <LoginForm next={nextPath} error={typeof error === "string" ? error : undefined} />
       <p className="text-center text-sm text-muted-foreground">
         New to Estathetics?{" "}
